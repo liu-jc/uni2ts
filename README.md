@@ -13,17 +13,22 @@ Uni2TS also provides tools for fine-tuning, inference, and evaluation for time s
 
 - [ ] Improve docstrings and documentation
 
-[//]: # (- [ ] Support more pre-training paradigms)
+- [ ] Support more pre-training paradigms
 
-[//]: # (  - [ ] &#40;Non-&#41;Contrastive learning)
+  - [ ] (Non-)Contrastive learning
 
-[//]: # (  - [ ] Masked Autoencoder)
+  - [ ] Masked Autoencoder
 
-[//]: # (  - [ ] Next token prediction)
+  - [ ] Next token prediction
 
-[//]: # (- [ ] Decoder Transformer)
+- [ ] Support more Transformer architectures
+  - [ ] Encoder-Decoder
+  - [ ] Decoder-only
 
-[//]: # (- [ ] Data augmentations - down sampling, subsampling, aggregation)
+- [ ] Data augmentations - down sampling, subsampling, aggregation
+- [ ] Triton/CUDA kernels
+  - [ ] Scaler
+  - [ ] Packed loss
 
 ## ⚙️ Installation
 
