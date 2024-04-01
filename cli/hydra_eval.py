@@ -34,8 +34,9 @@ if __name__ == "__main__":
         os.makedirs(dir_path)
     for dataset_name in dataset_names:
         print(f"----- Dataset Name: {dataset_name} -----")
-        cur_log_file = open(os.path.join(dir_path, dataset_name + ".log"), "a")
+        cur_log_file = open(os.path.join(dir_path, dataset_name + "-S.log"), "a")
         tot_t1 = time.time()
+        tot_time = 0
         for pred_len in ["96", "192", "336", "720"]:
             print(f"----- pred length: {pred_len} -----")
             cur_t1 = time.time()
@@ -44,7 +45,7 @@ if __name__ == "__main__":
                 overrides=[
                     "data=lsf_test",
                     f"data.dataset_name={dataset_name}",
-                    "data.mode=M",
+                    "data.mode=S",
                     f"patch_size={patch_sz[dataset_name]}",
                     'device="cuda"',
                     f"context_length={context_lengths[dataset_name]}",
@@ -57,7 +58,10 @@ if __name__ == "__main__":
                 time_dict[dataset_name] = {}
                 res_dict[dataset_name] = {}
             time_dict[dataset_name][pred_len] = time.time() - cur_t1
+            tot_time += time_dict[dataset_name][pred_len]
             res_dict[dataset_name][pred_len] = res
+            if res is None:
+                continue
             print(
                 f'pred_len: {pred_len}, MSE[0.5]: {res["MSE[0.5]"].item()}, MAE[0.5]: {res["MAE[0.5]"].item()}'
             )
@@ -65,6 +69,10 @@ if __name__ == "__main__":
                 f'pred_len: {pred_len}, MSE[0.5]: {res["MSE[0.5]"].item()}, MAE[0.5]: {res["MAE[0.5]"].item()}\n'
             )
         tot_endt = time.time()
+        time_dict[dataset_name]["total"] = tot_time
         print(f"Total Time elapsed for {dataset_name}: {tot_endt-tot_t1}s")
-        print("individual time for each dataset")
+        print(f"individual time for {dataset_name}")
+        print(time_dict[dataset_name])
+    for dataset_name in dataset_names:
+        print(f"individual time for {dataset_name}")
         print(time_dict[dataset_name])
