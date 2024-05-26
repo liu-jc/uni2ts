@@ -29,10 +29,17 @@ def evaluate(cfg):
     # print(OmegaConf.to_yaml(cfg))
     test_data, metadata = call(cfg.data)
     batch_size = cfg.batch_size
+    print(cfg.checkpoint_path)
     while True:
+        if callable(cfg.checkpoint_path):
+            checkpoint_path = call(cfg.checkpoint_path)
+        else:
+            checkpoint_path = cfg.checkpoint_path.checkpoint_path
         model = call(cfg.load_from_checkpoint)(
             prediction_length=metadata.prediction_length,
-            checkpoint_path=call(cfg.checkpoint_path),
+            # checkpoint_path=call(cfg.checkpoint_path),
+            # checkpoint_path=cfg.checkpoint_path.checkpoint_path,
+            checkpoint_path=checkpoint_path,
             target_dim=metadata.target_dim,
             feat_dynamic_real_dim=metadata.feat_dynamic_real_dim,
             past_feat_dynamic_real_dim=metadata.past_feat_dynamic_real_dim,
