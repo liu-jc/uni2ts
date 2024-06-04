@@ -64,8 +64,8 @@ Issues labelled `good first contribution`.
 2. **Clone** the forked repo to your machine.
    1. Clone and install the library in development mode:
       ```shell
-      git clone https://github.com/your-username-here/uni2ts.git
-      cd uni2ts
+      git clone https://github.com/your-username-here/uni2ts-sfr.git
+      cd uni2ts-sfr
       pip install -e '.[dev]'
       ```
    2. Install the pre-comit hook:

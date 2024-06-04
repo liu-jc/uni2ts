@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -46,11 +46,13 @@ class TimeSeriesDataset(Dataset):
         transform: Transformation,
         sample_time_series: SampleTimeSeriesType = SampleTimeSeriesType.NONE,
         dataset_weight: float = 1.0,
+        dataset_name: Union[str, None] = None,
     ):
         self.indexer = indexer
         self.transform = transform
         self.sample_time_series = sample_time_series
         self.dataset_weight = dataset_weight
+        self.dataset_name = dataset_name
 
         if sample_time_series == SampleTimeSeriesType.NONE:
             self.probabilities = None
@@ -61,7 +63,7 @@ class TimeSeriesDataset(Dataset):
         else:
             raise ValueError(f"Unknown sample type {sample_time_series}")
 
-    def __getitem__(self, idx: int) -> dict[str, FlattenedData]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         if idx < 0 or idx >= len(self):
             raise IndexError(
                 f"Index {idx} out of range for dataset of length {len(self)}"
@@ -82,8 +84,7 @@ class TimeSeriesDataset(Dataset):
     def _get_data(self, idx: int) -> dict[str, Data | BatchedData]:
         return self.indexer[idx % self.num_ts]
 
-    @staticmethod
-    def _flatten_data(data: dict[str, Data]) -> dict[str, FlattenedData]:
+    def _flatten_data(self, data: dict[str, Data]) -> dict[str, FlattenedData]:
         return {
             k: (
                 [v]
@@ -91,7 +92,7 @@ class TimeSeriesDataset(Dataset):
                 else list(v) if isinstance(v, MultivarTimeSeries) else v
             )
             for k, v in data.items()
-        }
+        } | {"dataset_name": self.dataset_name}
 
 
 class MultiSampleTimeSeriesDataset(TimeSeriesDataset):
@@ -103,9 +104,12 @@ class MultiSampleTimeSeriesDataset(TimeSeriesDataset):
         combine_fields: tuple[str, ...],
         sample_time_series: SampleTimeSeriesType = SampleTimeSeriesType.NONE,
         dataset_weight: float = 1.0,
+        dataset_name: Union[str, None] = None,
         sampler: Sampler = get_sampler("beta_binomial", a=2, b=5),
     ):
-        super().__init__(indexer, transform, sample_time_series, dataset_weight)
+        super().__init__(
+            indexer, transform, sample_time_series, dataset_weight, dataset_name
+        )
         self.max_ts = max_ts
         self.combine_fields = combine_fields
         self.sampler = sampler
@@ -135,6 +139,7 @@ class MultiSampleTimeSeriesDataset(TimeSeriesDataset):
                 raise AssertionError(
                     f"Field {field} not accounted for in {self.indexer} MultiSampleTimeSeriesDataset"
                 )
+        samples["dataset_name"] = self.dataset_name
         return samples
 
 

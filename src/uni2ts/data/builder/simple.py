@@ -186,6 +186,7 @@ class SimpleDatasetBuilder(DatasetBuilder):
             transform=transform_map[self.dataset](),
             dataset_weight=self.weight,
             sample_time_series=self.sample_time_series,
+            dataset_name=self.dataset,
         )
 
 
