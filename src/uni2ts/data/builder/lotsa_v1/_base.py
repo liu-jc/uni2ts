@@ -63,6 +63,7 @@ class LOTSADatasetBuilder(DatasetBuilder, abc.ABC):
                 self._get_transform(transform_map, dataset),
                 sample_time_series=self.sample_time_series,
                 dataset_weight=weight,
+                dataset_name=dataset,
             )
             for dataset, weight in zip(self.datasets, self.weights)
         ]

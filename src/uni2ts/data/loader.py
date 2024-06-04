@@ -17,11 +17,12 @@ import itertools
 from collections import defaultdict, deque
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field
-from typing import NamedTuple, Optional
+from typing import Any, List, NamedTuple, Optional
 
 import numpy as np
 import torch
 from jaxtyping import Bool, Int
+from numpy import dtype, ndarray
 from torch.utils.data import DataLoader as TorchDataLoader
 from torch.utils.data import Dataset, Sampler, default_collate, default_convert
 
@@ -36,6 +37,7 @@ class Collate:
         default_factory=dict
     )
     target_field: str = "target"
+    additional_fields: tuple[str, ...] = ("dataset_name",)
 
     def __post_init__(self):
         self.pad_func_map = defaultdict(self._default_pad_func) | self.pad_func_map
@@ -112,6 +114,9 @@ class PackCollate(Collate):
         merged_batch = self.merge_batch(packed_batch, bin_spaces) | dict(
             sample_id=sample_id
         )
+        if "dataset_name" in self.additional_fields and "dataset_name" in batch[0]:
+            dataset_names = self.get_dataset_name(packed_batch, bin_spaces)
+            merged_batch |= dict(dataset_name=dataset_names)
         return merged_batch
 
     def first_fit_decreasing_bin_packing(
@@ -154,6 +159,25 @@ class PackCollate(Collate):
             ]
         ).to(torch.long)
         return sample_id
+
+    def get_dataset_name(
+        self, batch: list[list[Sample]], bin_spaces: Int[np.ndarray, "batch"]
+    ) -> ndarray[Any, dtype[Any]]:
+        dataset_names = np.array(
+            [
+                list(
+                    itertools.chain(
+                        *[
+                            [sample["dataset_name"]] * len(sample[self.target_field])
+                            for idx, sample in enumerate(bin_)
+                        ]
+                    )
+                )
+                + ["NA"] * space
+                for bin_, space in zip(batch, bin_spaces)
+            ]
+        )
+        return dataset_names
 
     def merge_batch(
         self, batch: list[list[Sample]], bin_spaces: Int[np.ndarray, "batch"]
@@ -224,7 +248,13 @@ class BatchedSampleQueue:
                 [
                     (key in batch.data)
                     and (metadata.shape == tuple(batch.data[key].shape[1:]))
-                    and (metadata.dtype == batch.data[key].dtype)
+                    and (
+                        metadata.dtype == batch.data[key].dtype
+                        or (
+                            isinstance(metadata.dtype, np.dtypes.StrDType)
+                            and isinstance(batch.data[key].dtype, np.dtypes.StrDType)
+                        )  # For dataset_name, it would be StrDType
+                    )
                     for key, metadata in self.schema.items()
                 ]
             ), "batch must have the same schema as the first batch"
@@ -257,10 +287,16 @@ class BatchedSampleQueue:
         return out.as_batched_data()
 
     def as_batched_data(self) -> BatchedSample:
-        return {
-            key: torch.cat([batch.data[key] for batch in self.container], dim=0)
-            for key in self.schema.keys()
-        }
+        batched_data = {}
+        for key in self.schema.keys():
+            cur = [batch.data[key] for batch in self.container]
+            if isinstance(cur[0], torch.Tensor):
+                batched_data[key] = torch.cat(cur, dim=0)
+            elif isinstance(
+                cur[0], ndarray
+            ):  # for additional fields which are in ndarray format, e.g., dataset_name
+                batched_data[key] = np.concatenate(cur, axis=0)
+        return batched_data
 
     def __len__(self) -> int:
         return sum(len(batch) for batch in self.container)
