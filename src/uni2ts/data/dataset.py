@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 from enum import Enum
-from typing import Any, Dict, Tuple, Union
+from typing import Any
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -46,7 +46,7 @@ class TimeSeriesDataset(Dataset):
         transform: Transformation,
         sample_time_series: SampleTimeSeriesType = SampleTimeSeriesType.NONE,
         dataset_weight: float = 1.0,
-        dataset_name: Union[str, None] = None,
+        dataset_name: str | None = None,
     ):
         self.indexer = indexer
         self.transform = transform
@@ -63,7 +63,7 @@ class TimeSeriesDataset(Dataset):
         else:
             raise ValueError(f"Unknown sample type {sample_time_series}")
 
-    def __getitem__(self, idx: int) -> dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, FlattenedData]:
         if idx < 0 or idx >= len(self):
             raise IndexError(
                 f"Index {idx} out of range for dataset of length {len(self)}"
@@ -104,7 +104,7 @@ class MultiSampleTimeSeriesDataset(TimeSeriesDataset):
         combine_fields: tuple[str, ...],
         sample_time_series: SampleTimeSeriesType = SampleTimeSeriesType.NONE,
         dataset_weight: float = 1.0,
-        dataset_name: Union[str, None] = None,
+        dataset_name: str | None = None,
         sampler: Sampler = get_sampler("beta_binomial", a=2, b=5),
     ):
         super().__init__(
