@@ -18,7 +18,6 @@ from typing import Any, Optional, Tuple
 import numpy as np
 import torch
 from jaxtyping import Bool, Float, Int
-from torch import Tensor
 from torch.distributions import Distribution
 
 from ._base import PackedDistributionLoss
@@ -34,7 +33,7 @@ class PackedNLLLoss(PackedDistributionLoss):
         sample_id: Optional[Int[torch.Tensor, "*batch seq_len"]] = None,
         variate_id: Optional[Int[torch.Tensor, "*batch seq_len"]] = None,
         return_total_loss: bool = False,
-    ) -> tuple[Tensor, Tensor] | Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
         if observed_mask is None:
             observed_mask = torch.ones_like(target, dtype=torch.bool)
         if sample_id is None:
@@ -72,7 +71,6 @@ class PackedNLLLoss(PackedDistributionLoss):
     ):
         loss_per_ds = {}
         loss_per_patch = loss_per_ele.mean(-1)  # average over the hidden dimension
-        # print('loss_per_patch.size():', loss_per_patch.size())
 
         # Flatten the array
         assert field in batched_samples
