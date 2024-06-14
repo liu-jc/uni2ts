@@ -1,0 +1,9 @@
+_target_: uni2ts.data.builder.ConcatDatasetBuilder
+_convert_: all
+_args_:
+  - _target_: uni2ts.data.builder.simple.SimpleDatasetBuilder
+    dataset: can34
+  - _target_: uni2ts.data.builder.simple.SimpleDatasetBuilder
+    dataset: ind82
+  - _target_: uni2ts.data.builder.simple.SimpleDatasetBuilder
+    dataset: deu38
