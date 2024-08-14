@@ -72,6 +72,16 @@ class TimeSeriesDataset(Dataset):
         if self.sample_time_series != SampleTimeSeriesType.NONE:
             idx = np.random.choice(len(self.probabilities), p=self.probabilities)
 
+        # try :
+        #     tmp_transformed_data = self.transform(self._flatten_data(self._get_data(idx)))
+        # except Exception as e:
+        #     print(f"Error in index {idx}")
+        #     flattned_data = self._flatten_data(self._get_data(idx))
+        #     print('Flatten dataset name:', flattned_data['dataset_name'])
+        #     print('Flatten Data size:', flattned_data['target'])
+        #     print('Flatten Data size:', len(flattned_data['target']))
+        #     print('self._get_data(idx) size:', self._get_data(idx)['target'])
+        #     raise e
         return self.transform(self._flatten_data(self._get_data(idx)))
 
     @property

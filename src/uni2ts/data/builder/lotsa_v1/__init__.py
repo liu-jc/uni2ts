@@ -15,27 +15,33 @@
 
 from ._base import LOTSADatasetBuilder
 from .buildings_bench import Buildings900KDatasetBuilder, BuildingsBenchDatasetBuilder
-from .cloudops_tsf import CloudOpsTSFDatasetBuilder
-from .cmip6 import CMIP6DatasetBuilder
-from .era5 import ERA5DatasetBuilder
+from .cloudops_tsf import CloudOpsTSFDatasetBuilder, CloudOpsTSFUnivarDatasetBuilder
+from .cmip6 import CMIP6DatasetBuilder, CMIP6UnivarDatasetBuilder
+from .era5 import ERA5DatasetBuilder, ERA5UnivarDatasetBuilder
 from .gluonts import GluonTSDatasetBuilder
 from .largest import LargeSTDatasetBuilder
-from .lib_city import LibCityDatasetBuilder
-from .others import OthersLOTSADatasetBuilder
+from .lib_city import LibCityDatasetBuilder, LibCityUnivarDatasetBuilder
+from .others import OthersLOTSADatasetBuilder, OthersUnivarLOTSADatasetBuilder
 from .proenfo import ProEnFoDatasetBuilder
-from .subseasonal import SubseasonalDatasetBuilder
+from .subseasonal import SubseasonalDatasetBuilder, SubseasonalUnivarDatasetBuilder
 
 __all__ = [
     "LOTSADatasetBuilder",
     "Buildings900KDatasetBuilder",
     "BuildingsBenchDatasetBuilder",
     "CloudOpsTSFDatasetBuilder",
+    "CloudOpsTSFUnivarDatasetBuilder",
     "CMIP6DatasetBuilder",
+    "CMIP6UnivarDatasetBuilder",
     "ERA5DatasetBuilder",
+    "ERA5UnivarDatasetBuilder",
     "GluonTSDatasetBuilder",
     "LargeSTDatasetBuilder",
     "LibCityDatasetBuilder",
+    "LibCityUnivarDatasetBuilder",
     "OthersLOTSADatasetBuilder",
+    "OthersUnivarLOTSADatasetBuilder",
     "ProEnFoDatasetBuilder",
     "SubseasonalDatasetBuilder",
+    "SubseasonalUnivarDatasetBuilder",
 ]

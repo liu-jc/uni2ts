@@ -17,20 +17,28 @@ import argparse
 import traceback
 from pathlib import Path
 
+import ipdb
+
 from uni2ts.common.env import env
 
 from . import (
     Buildings900KDatasetBuilder,
     BuildingsBenchDatasetBuilder,
     CloudOpsTSFDatasetBuilder,
+    CloudOpsTSFUnivarDatasetBuilder,
     CMIP6DatasetBuilder,
+    CMIP6UnivarDatasetBuilder,
     ERA5DatasetBuilder,
+    ERA5UnivarDatasetBuilder,
     GluonTSDatasetBuilder,
     LargeSTDatasetBuilder,
     LibCityDatasetBuilder,
+    LibCityUnivarDatasetBuilder,
     OthersLOTSADatasetBuilder,
+    OthersUnivarLOTSADatasetBuilder,
     ProEnFoDatasetBuilder,
     SubseasonalDatasetBuilder,
+    SubseasonalUnivarDatasetBuilder,
 )
 
 parser = argparse.ArgumentParser()
@@ -41,14 +49,20 @@ parser.add_argument(
         "buildings_900k",
         "buildings_bench",
         "cloudops_tsf",
+        "cloudops_tsfunivar",
         "cmip6",
+        "cmip6univar",
         "era5",
+        "era5univar",
         "gluonts",
         "largest",
         "lib_city",
+        "lib_cityunivar",
         "others",
+        "othersunivar",
         "proenfo",
         "subseasonal",
+        "subseasonalunivar",
     ],
 )
 parser.add_argument(
@@ -74,14 +88,20 @@ Builder = {
     "buildings_900k": Buildings900KDatasetBuilder,
     "buildings_bench": BuildingsBenchDatasetBuilder,
     "cloudops_tsf": CloudOpsTSFDatasetBuilder,
+    "cloudops_tsfunivar": CloudOpsTSFUnivarDatasetBuilder,
     "cmip6": CMIP6DatasetBuilder,
+    "cmip6univar": CMIP6UnivarDatasetBuilder,
     "era5": ERA5DatasetBuilder,
+    "era5univar": ERA5UnivarDatasetBuilder,
     "gluonts": GluonTSDatasetBuilder,
     "largest": LargeSTDatasetBuilder,
     "lib_city": LibCityDatasetBuilder,
+    "lib_cityunivar": LibCityUnivarDatasetBuilder,
     "others": OthersLOTSADatasetBuilder,
+    "othersunivar": OthersUnivarLOTSADatasetBuilder,
     "proenfo": ProEnFoDatasetBuilder,
     "subseasonal": SubseasonalDatasetBuilder,
+    "subseasonalunivar": SubseasonalUnivarDatasetBuilder,
 }[args.builder]
 
 datasets = set(args.datasets or Builder.dataset_list)

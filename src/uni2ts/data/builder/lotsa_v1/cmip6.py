@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Generator
 
 import datasets
+import ipdb
 import numpy as np
 import pandas as pd
 from datasets import Features, Sequence, Value
@@ -114,6 +115,63 @@ class CMIP6DatasetBuilder(LOTSADatasetBuilder):
                     target=Sequence(
                         Sequence(Value("float32")), length=len(CMIP6_VARIABLES)
                     ),
+                )
+            ),
+            gen_kwargs=dict(jobs=all_jobs),
+            num_proc=num_proc,
+            cache_dir=env.HF_CACHE_PATH,
+        )
+        hf_dataset.info.dataset_name = dataset
+        hf_dataset.save_to_disk(
+            self.storage_path / dataset,
+            num_proc=num_proc,
+        )
+
+
+class CMIP6UnivarDatasetBuilder(LOTSADatasetBuilder):
+    dataset_list = [f"cmip6_univar_{year}" for year in range(1850, 2015, 5)]
+    # dataset_list = [f"cmip6_univar_{year}" for year in range(1850, 1851, 5)]
+    dataset_type_map = defaultdict(lambda: TimeSeriesDataset)
+    dataset_load_func_map = defaultdict(lambda: partial(TimeSeriesDataset))
+    uniform = True
+
+    def build_dataset(self, dataset: str, num_proc: int = os.cpu_count()):
+        cmip6_path = Path(os.getenv("CMIP6_PATH"))
+
+        year = int(dataset.split("_")[-1])
+        all_jobs = [(x, y) for x, y in itertools.product(range(64), range(128))]
+
+        all_vars = {var: [] for var in CMIP6_VARIABLES}
+        for shard in range(10):
+            np_file = np.load(
+                str(cmip6_path / f"train/{year}01010600-{year + 5}01010000_{shard}.npz")
+            )
+            for var in CMIP6_VARIABLES:
+                all_vars[var].append(np_file[var][:, 0, :, :])
+        targets = np.stack(
+            [np.concatenate(all_vars[var]) for var in CMIP6_VARIABLES], axis=0
+        )  # (n_vars, n_times, n_x, n_y)
+
+        def gen_func(
+            jobs: list[tuple[int, int]]
+        ) -> Generator[dict[str, Any], None, None]:
+            for v in range(len(CMIP6_VARIABLES)):
+                for x, y in jobs:
+                    yield dict(
+                        item_id=f"{year}_{v}_{x}_{y}",
+                        start=pd.Timestamp(f"{year}-01-01 06:00"),
+                        target=targets[v, :, x, y],
+                        freq="6H",
+                    )
+
+        hf_dataset = datasets.Dataset.from_generator(
+            gen_func,
+            features=Features(
+                dict(
+                    item_id=Value("string"),
+                    start=Value("timestamp[s]"),
+                    freq=Value("string"),
+                    target=Sequence(Value("float32")),
                 )
             ),
             gen_kwargs=dict(jobs=all_jobs),

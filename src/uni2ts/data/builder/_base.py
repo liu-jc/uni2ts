@@ -22,7 +22,7 @@ from uni2ts.transform import Transformation
 
 
 # TODO: Add __repr__
-class DatasetBuilder(abc.ABC):
+class DatasetBuilder:
     @abc.abstractmethod
     def build_dataset(self, *args, **kwargs): ...
 
@@ -36,6 +36,7 @@ class ConcatDatasetBuilder(DatasetBuilder):
     def __init__(self, *builders: DatasetBuilder):
         super().__init__()
         assert len(builders) > 0, "Must provide at least one builder to ConcatBuilder"
+        print(builders)
         assert all(
             isinstance(builder, DatasetBuilder) for builder in builders
         ), "All builders must be instances of DatasetBuilder"

@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Generator
 
 import datasets
+import ipdb
 import numpy as np
 import pandas as pd
 from datasets import Features, Sequence, Value
@@ -113,6 +114,36 @@ def _get_godaddy_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
             item_id=Value("string"),
             start=Value("timestamp[s]"),
             target=Sequence(Sequence(Value("float32")), length=2),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
+def _get_godaddy_univar_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
+    train = pd.read_csv(data_path / "train.csv")
+    test = pd.read_csv(data_path / "revealed_test.csv")
+    df = pd.concat([train, test])
+    df["first_day_of_month"] = pd.to_datetime(df["first_day_of_month"])
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        for target_type in ["microbusiness_density", "active"]:
+            for idx in df.cfips.unique():
+                id_df = df.query(f"cfips == {idx}")
+                id_df = id_df.set_index("first_day_of_month").sort_index()
+                yield dict(
+                    item_id=f"{idx}",
+                    start=id_df.index[0],
+                    target=id_df[[target_type]].to_numpy().squeeze(-1),
+                    freq="MS",
+                )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
             freq=Value("string"),
         )
     )
@@ -317,6 +348,53 @@ def _get_china_air_quality_gen_func(data_path: Path) -> tuple[GenFunc, Features]
     return gen_func, features
 
 
+def _get_china_air_quality_univar_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
+    airquality = pd.read_csv(data_path / "airquality.csv")
+    airquality["time"] = pd.to_datetime(airquality["time"])
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        target_cols = [
+            "PM25_Concentration",
+            "PM10_Concentration",
+            "NO2_Concentration",
+            "CO_Concentration",
+            "O3_Concentration",
+            "SO2_Concentration",
+        ]
+        for target_type in target_cols:
+            for station_id in airquality.station_id.unique():
+                station = (
+                    airquality.query(f"station_id == {station_id}")
+                    .set_index("time")
+                    .sort_index()
+                )
+                station = station.reindex(
+                    pd.date_range(
+                        start=station.index[0],
+                        end=station.index[-1],
+                        freq="H",
+                    )
+                )
+                # ipdb.set_trace()
+                yield dict(
+                    item_id=f"{station_id}",
+                    start=station.index[0],
+                    target=station[[target_type]].to_numpy().squeeze(-1),
+                    freq="H",
+                )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
 def _get_beijing_air_quality_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
     files = data_path.glob("*.csv")
     dfs = [(file, pd.read_csv(file)) for file in files]
@@ -376,6 +454,65 @@ def _get_beijing_air_quality_gen_func(data_path: Path) -> tuple[GenFunc, Feature
     return gen_func, features
 
 
+def _get_beijing_air_quality_univar_gen_func(
+    data_path: Path,
+) -> tuple[GenFunc, Features]:
+    files = data_path.glob("*.csv")
+    dfs = [(file, pd.read_csv(file)) for file in files]
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        target_cols = [
+            "PM2.5",
+            "PM10",
+            "SO2",
+            "NO2",
+            "CO",
+            "O3",
+            "TEMP",
+            "PRES",
+            "DEWP",
+            "RAIN",
+            "WSPM",
+        ]
+        for target_type in target_cols:
+            for file, data in dfs:
+                data["date"] = pd.to_datetime(
+                    data.year.astype(str)
+                    + "-"
+                    + data.month.astype(str)
+                    + "-"
+                    + data.day.astype(str)
+                    + " "
+                    + data.hour.astype(str)
+                    + ":00"
+                )
+                data = data.set_index("date").sort_index()
+                data = data.reindex(
+                    pd.date_range(
+                        start=data.index[0],
+                        end=data.index[-1],
+                        freq="H",
+                    )
+                )
+                yield dict(
+                    item_id=file.stem,
+                    start=data.index[0],
+                    target=data[[target_type]].to_numpy().squeeze(-1),
+                    freq="H",
+                )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
 def _get_residential_load_power_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
     units = [
         file.stem
@@ -424,6 +561,59 @@ def _get_residential_load_power_gen_func(data_path: Path) -> tuple[GenFunc, Feat
     return gen_func, features
 
 
+def _get_residential_load_power_univar_gen_func(
+    data_path: Path,
+) -> tuple[GenFunc, Features]:
+    units = [
+        file.stem
+        for file in (data_path / "anonymous_public_load_power_data_per_unit").glob(
+            "*.rds"
+        )
+    ]
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        for target_type in ["sum", "min", "max"]:
+            for unit in units:
+                load_power = read_r(
+                    data_path / f"anonymous_public_load_power_data_per_unit/{unit}.rds"
+                )[None]
+                load_power = (
+                    load_power.drop_duplicates(subset="utc", keep="last")
+                    .set_index("utc")
+                    .sort_index()
+                )
+                load_power = load_power.reindex(
+                    pd.date_range(
+                        start=load_power.index[0],
+                        end=load_power.index[-1],
+                        freq="T",
+                    )
+                )
+                target = load_power[
+                    [target_type]
+                ].to_numpy()  # should change to be a 1D array?
+                if target.shape[0] < 16:
+                    continue
+
+                yield dict(
+                    item_id=f"{unit}",
+                    start=load_power.index[0],
+                    target=target.squeeze(-1),
+                    freq="T",
+                )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
 def _get_residential_pv_power_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
     units = [
         file.stem
@@ -461,6 +651,53 @@ def _get_residential_pv_power_gen_func(data_path: Path) -> tuple[GenFunc, Featur
             item_id=Value("string"),
             start=Value("timestamp[s]"),
             target=Sequence(Sequence(Value("float32")), length=3),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
+def _get_residential_pv_power_univar_gen_func(
+    data_path: Path,
+) -> tuple[GenFunc, Features]:
+    units = [
+        file.stem
+        for file in (data_path / "anonymous_public_pv_power_data_per_unit").glob(
+            "*.rds"
+        )
+    ]
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        for target_type in ["sum", "min", "max"]:
+            for unit in units:
+                pv_power = read_r(
+                    data_path / f"anonymous_public_pv_power_data_per_unit/{unit}.rds"
+                )[None]
+                pv_power = (
+                    pv_power.drop_duplicates(subset="utc", keep="last")
+                    .set_index("utc")
+                    .sort_index()
+                )
+                pv_power = pv_power.reindex(
+                    pd.date_range(
+                        start=pv_power.index[0],
+                        end=pv_power.index[-1],
+                        freq="T",
+                    )
+                )
+                yield dict(
+                    item_id=f"{unit}",
+                    start=pv_power.index[0],
+                    target=pv_power[[target_type]].to_numpy().squeeze(-1),
+                    freq="T",
+                )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
             freq=Value("string"),
         )
     )
@@ -521,6 +758,68 @@ def _get_cdc_fluview_ilinet_gen_func(data_path: Path) -> tuple[GenFunc, Features
             item_id=Value("string"),
             start=Value("timestamp[s]"),
             target=Sequence(Sequence(Value("float32")), length=5),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
+def _get_cdc_fluview_ilinet_univar_gen_func(
+    data_path: Path,
+) -> tuple[GenFunc, Features]:
+    national = pd.read_csv(data_path / "National/ILINet.csv", skiprows=1)
+    hhs = pd.read_csv(data_path / "HHS/ILINet.csv", skiprows=1)
+    census = pd.read_csv(data_path / "Census/ILINet.csv", skiprows=1)
+    state = pd.read_csv(data_path / "State/ILINet.csv", skiprows=1)
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        for target_type in [
+            "% WEIGHTED ILI",
+            "%UNWEIGHTED ILI",
+            "ILITOTAL",
+            "NUM. OF PROVIDERS",
+            "TOTAL PATIENTS",
+        ]:
+            for dataset in (national, hhs, census, state):
+                dataset["date"] = pd.to_datetime(
+                    (dataset.YEAR * 100 + dataset.WEEK).astype(str) + "0",
+                    format="%Y%W%w",
+                )
+                for region in dataset.REGION.unique():
+                    region_ds = (
+                        dataset.query(f'REGION == "{region}"')
+                        .set_index("date")
+                        .sort_index()
+                    )
+
+                    if region_ds["REGION TYPE"].iloc[0] == "National":
+                        item_id = "national"
+                    elif region_ds["REGION TYPE"].iloc[0] == "HHS Regions":
+                        item_id = f"hhs_{region}"
+                    elif region_ds["REGION TYPE"].iloc[0] == "Census Regions":
+                        item_id = f"census_{region}"
+                    elif region_ds["REGION TYPE"].iloc[0] == "States":
+                        item_id = f"states_{region}"
+                    else:
+                        raise ValueError
+
+                    yield dict(
+                        item_id=item_id,
+                        start=region_ds.index[0],
+                        target=region_ds[[target_type]]
+                        .replace("X", np.nan)
+                        .to_numpy()
+                        .astype(float)
+                        .squeeze(-1),
+                        freq="W",
+                    )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
             freq=Value("string"),
         )
     )
@@ -708,6 +1007,186 @@ def _get_cdc_fluview_who_nrevss_gen_func(data_path: Path) -> tuple[GenFunc, Feat
     return gen_func, features
 
 
+def _get_cdc_fluview_who_nrevss_univar_gen_func(
+    data_path: Path,
+) -> tuple[GenFunc, Features]:
+    national_prior = pd.read_csv(
+        data_path / "National/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
+    )
+    national_public_health = pd.read_csv(
+        data_path / "National/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
+    )
+    national_clinical_labs = pd.read_csv(
+        data_path / "National/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
+    )
+    hhs_prior = pd.read_csv(
+        data_path / "HHS/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
+    )
+    hhs_public_health = pd.read_csv(
+        data_path / "HHS/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
+    )
+    hhs_clinical_labs = pd.read_csv(
+        data_path / "HHS/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
+    )
+    census_prior = pd.read_csv(
+        data_path / "Census/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
+    )
+    census_public_health = pd.read_csv(
+        data_path / "Census/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
+    )
+    census_clinical_labs = pd.read_csv(
+        data_path / "Census/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
+    )
+    state_prior = pd.read_csv(
+        data_path / "State/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
+    )
+    state_public_health = pd.read_csv(
+        data_path / "State/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
+    )
+    state_clinical_labs = pd.read_csv(
+        data_path / "State/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
+    )
+
+    state_public_health["YEAR"] = (
+        state_public_health["SEASON_DESCRIPTION"]
+        .apply(lambda x: x[len("Season ") : len("Season 2015")])
+        .astype(int)
+    )
+    state_public_health["WEEK"] = (
+        state_public_health["SEASON_DESCRIPTION"]
+        .apply(lambda x: x[len("Season 2015-") :])
+        .astype(int)
+    )
+
+    def gen_func() -> Generator[dict[str, Any], None, None]:
+        for target_type in ["TOTAL SPECIMENS", "A", "B", "H3N2v"]:
+            for prior, public_health, clinical_labs in [
+                (national_prior, national_public_health, national_clinical_labs),
+                (hhs_prior, hhs_public_health, hhs_clinical_labs),
+                (census_prior, census_public_health, census_clinical_labs),
+                (state_prior, state_public_health, state_clinical_labs),
+            ]:
+                for col in [
+                    "TOTAL SPECIMENS",
+                    "A (2009 H1N1)",
+                    "A (H1)",
+                    "A (H3)",
+                    "A (Subtyping not Performed)",
+                    "A (Unable to Subtype)",
+                    "B",
+                    "H3N2v",
+                ]:
+                    prior[col] = prior[col].replace("X", 0).astype(int)
+
+                for col in [
+                    "TOTAL SPECIMENS",
+                    "A (2009 H1N1)",
+                    "A (H3)",
+                    "A (Subtyping not Performed)",
+                    "B",
+                    "BVic",
+                    "BYam",
+                    "H3N2v",
+                ]:
+                    public_health[col] = public_health[col].replace("X", 0).astype(int)
+
+                for col in ["TOTAL SPECIMENS", "TOTAL A", "TOTAL B"]:
+                    clinical_labs[col] = clinical_labs[col].replace("X", 0).astype(int)
+
+                prior.loc[:, "A"] = (
+                    prior["A (2009 H1N1)"]
+                    + prior["A (H1)"]
+                    + prior["A (H3)"]
+                    + prior["A (Subtyping not Performed)"]
+                    + prior["A (Unable to Subtype)"]
+                )
+                public_health.loc[:, "A"] = (
+                    public_health["A (2009 H1N1)"]
+                    + public_health["A (H3)"]
+                    + public_health["A (Subtyping not Performed)"]
+                )
+                public_health.loc[:, "B"] = (
+                    public_health["B"] + public_health["BVic"] + public_health["BYam"]
+                )
+
+                prior = prior[
+                    [
+                        "TOTAL SPECIMENS",
+                        "A",
+                        "B",
+                        "H3N2v",
+                        "YEAR",
+                        "WEEK",
+                        "REGION",
+                        "REGION TYPE",
+                    ]
+                ]
+                post = public_health[
+                    [
+                        "TOTAL SPECIMENS",
+                        "A",
+                        "B",
+                        "H3N2v",
+                        "YEAR",
+                        "WEEK",
+                        "REGION",
+                        "REGION TYPE",
+                    ]
+                ]
+                post.loc[:, "TOTAL SPECIMENS"] = (
+                    post["TOTAL SPECIMENS"] + clinical_labs["TOTAL SPECIMENS"]
+                )
+                post.loc[:, "A"] = post["A"] + clinical_labs["TOTAL A"]
+                post.loc[:, "B"] = post["B"] + clinical_labs["TOTAL B"]
+
+                combined = pd.concat([prior, post])
+                combined["date"] = pd.to_datetime(
+                    (combined.YEAR * 100 + combined.WEEK).astype(str) + "0",
+                    format="%Y%W%w",
+                )
+
+                for region in combined.REGION.unique():
+                    region_ds = (
+                        combined.query(f'REGION == "{region}"')
+                        .set_index("date")
+                        .sort_index()
+                    )
+
+                    if region_ds["REGION TYPE"].iloc[0] == "National":
+                        item_id = "national"
+                    elif region_ds["REGION TYPE"].iloc[0] == "HHS Regions":
+                        item_id = f"hhs_{region}"
+                    elif region_ds["REGION TYPE"].iloc[0] == "Census Regions":
+                        item_id = f"census_{region}"
+                    elif region_ds["REGION TYPE"].iloc[0] == "States":
+                        item_id = f"states_{region}"
+                    else:
+                        raise ValueError
+
+                    target = region_ds[[target_type]].to_numpy().astype(np.float32)
+
+                    if target.shape[0] < 16:
+                        continue
+
+                    yield dict(
+                        item_id=item_id,
+                        start=region_ds.index[0],
+                        target=target.squeeze(-1),
+                        freq="W",
+                    )
+
+    features = Features(
+        dict(
+            item_id=Value("string"),
+            start=Value("timestamp[s]"),
+            target=Sequence(Value("float32")),
+            freq=Value("string"),
+        )
+    )
+
+    return gen_func, features
+
+
 def _get_project_tycho_gen_func(
     data_path: Path,
     length_threshold: int = 100,
@@ -818,6 +1297,78 @@ class OthersLOTSADatasetBuilder(LOTSADatasetBuilder):
             "residential_pv_power": _get_residential_pv_power_gen_func,
             "cdc_fluview_ilinet": _get_cdc_fluview_ilinet_gen_func,
             "cdc_fluview_who_nrevss": _get_cdc_fluview_who_nrevss_gen_func,
+            "project_tycho": _get_project_tycho_gen_func,
+        }[dataset](data_path)
+
+        hf_dataset = datasets.Dataset.from_generator(
+            gen_func,
+            features=features,
+            cache_dir=env.HF_CACHE_PATH,
+        )
+        hf_dataset.info.dataset_name = dataset
+        hf_dataset.save_to_disk(self.storage_path / dataset)
+
+
+class OthersUnivarLOTSADatasetBuilder(LOTSADatasetBuilder):
+    dataset_list = [
+        "kdd2022",
+        "godaddy_univar",
+        "favorita_sales",
+        "favorita_transactions",
+        "restaurant",
+        "hierarchical_sales",
+        "china_air_quality_univar",
+        "beijing_air_quality_univar",
+        "residential_load_power_univar",
+        "residential_pv_power_univar",
+        "cdc_fluview_ilinet_univar",
+        "cdc_fluview_who_nrevss_univar",
+        "project_tycho",
+    ]
+    dataset_type_map = defaultdict(lambda: TimeSeriesDataset) | {
+        dataset: MultiSampleTimeSeriesDataset for dataset in MULTI_SAMPLE_DATASETS
+    }
+    dataset_load_func_map = defaultdict(lambda: partial(TimeSeriesDataset)) | {
+        dataset: partial(
+            MultiSampleTimeSeriesDataset,
+            max_ts=128,
+            combine_fields=("target", "past_feat_dynamic_real"),
+        )
+        for dataset in MULTI_SAMPLE_DATASETS
+    }
+
+    def build_dataset(self, dataset: str):
+        data_path = (
+            Path(os.getenv("OTHERS_PATH"))
+            / {
+                "kdd2022": "kdd2022",
+                "godaddy_univar": "godaddy",
+                "favorita_sales": "favorita",
+                "favorita_transactions": "favorita",
+                "restaurant": "restaurant",
+                "hierarchical_sales": "hierarchical_sales",
+                "china_air_quality_univar": "china_air_quality",
+                "beijing_air_quality_univar": "beijing_air_quality",
+                "residential_load_power_univar": "residential_power",
+                "residential_pv_power_univar": "residential_power",
+                "cdc_fluview_ilinet_univar": "CDCFluView",
+                "cdc_fluview_who_nrevss_univar": "CDCFluView",
+                "project_tycho": "ProjectTycho",
+            }[dataset]
+        )
+        gen_func, features = {
+            "kdd2022": _get_kdd_2022_gen_func,
+            "godaddy_univar": _get_godaddy_univar_gen_func,
+            "favorita_sales": _get_favorita_sales_gen_func,
+            "favorita_transactions": _get_favorita_transactions_gen_func,
+            "restaurant": _get_restaurant_gen_func,
+            "hierarchical_sales": _get_hierarchical_sales_gen_func,
+            "china_air_quality_univar": _get_china_air_quality_univar_gen_func,
+            "beijing_air_quality_univar": _get_beijing_air_quality_univar_gen_func,
+            "residential_load_power_univar": _get_residential_load_power_univar_gen_func,
+            "residential_pv_power_univar": _get_residential_pv_power_univar_gen_func,
+            "cdc_fluview_ilinet_univar": _get_cdc_fluview_ilinet_univar_gen_func,
+            "cdc_fluview_who_nrevss_univar": _get_cdc_fluview_who_nrevss_univar_gen_func,
             "project_tycho": _get_project_tycho_gen_func,
         }[dataset](data_path)
 
