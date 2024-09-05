@@ -1,0 +1,246 @@
+_target_: uni2ts.data.builder.ConcatDatasetBuilder
+_args_:
+  - _target_: uni2ts.data.builder.lotsa_v1.Buildings900KDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      buildings_900k: 0.09286475303067834
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.BuildingsBenchDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      sceaux: 241.38629960710065
+      borealis: 39.15494605379163
+      ideal: 40.8005553088589
+      bdg-2_panther: 61.787218670432225
+      bdg-2_fox: 121.45154010678951
+      bdg-2_rat: 119.10786227690012
+      bdg-2_bear: 114.8927890032186
+      smart: 135.013536797452
+      lcl: 94.40937003334348
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.CloudOpsTSFDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      azure_vm_traces_2017: 1.045424933949806
+      borg_cluster_data_2011: 0
+      alibaba_cluster_trace_2018: 0
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.CMIP6DatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      cmip6_1850: 0
+      cmip6_1855: 0
+      cmip6_1860: 0
+      cmip6_1865: 0
+      cmip6_1870: 0
+      cmip6_1875: 0
+      cmip6_1880: 0
+      cmip6_1885: 0
+      cmip6_1890: 0
+      cmip6_1895: 0
+      cmip6_1900: 0
+      cmip6_1905: 0
+      cmip6_1910: 0
+      cmip6_1915: 0
+      cmip6_1920: 0
+      cmip6_1925: 0
+      cmip6_1930: 0
+      cmip6_1935: 0
+      cmip6_1940: 0
+      cmip6_1945: 0
+      cmip6_1950: 0
+      cmip6_1955: 0
+      cmip6_1960: 0
+      cmip6_1965: 0
+      cmip6_1970: 0
+      cmip6_1975: 0
+      cmip6_1980: 0
+      cmip6_1985: 0
+      cmip6_1990: 0
+      cmip6_1995: 0
+      cmip6_2000: 0
+      cmip6_2005: 0
+      cmip6_2010: 0
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.ERA5DatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      era5_1989: 0
+      era5_1990: 0
+      era5_1991: 0
+      era5_1992: 0
+      era5_1993: 0
+      era5_1994: 0
+      era5_1995: 0
+      era5_1996: 0
+      era5_1997: 0
+      era5_1998: 0
+      era5_1999: 0
+      era5_2000: 0
+      era5_2001: 0
+      era5_2002: 0
+      era5_2003: 0
+      era5_2004: 0
+      era5_2005: 0
+      era5_2006: 0
+      era5_2007: 0
+      era5_2008: 0
+      era5_2009: 0
+      era5_2010: 0
+      era5_2011: 0
+      era5_2012: 0
+      era5_2013: 0
+      era5_2014: 0
+      era5_2015: 0
+      era5_2016: 0
+      era5_2017: 0
+      era5_2018: 0
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.GluonTSDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      taxi_30min: 2.452282964621727
+      uber_tlc_daily: 1.2676351413148952
+      uber_tlc_hourly: 30.405906185300832
+      wiki-rolling_nips: 3.4969272169238272
+      london_smart_meters_with_missing: 30.202174830949904
+      wind_farms_with_missing: 494.70624648914975
+      wind_power: 52174.55927241229
+      solar_power: 52175.088272572146
+      oikolab_weather: 705.7355865876068
+      elecdemand: 123.57443734086445
+      covid_mobility: 2.89541369259554
+      kaggle_web_traffic_weekly: 0.8040802429713783
+      extended_web_traffic_with_missing: 1.1492662158292843
+      m5: 5.467891278020448
+      m4_yearly: 0.2607565916862949
+      m1_yearly: 0.20867226431299588
+      m1_quarterly: 0.3510281195392504
+      monash_m3_yearly: 0.20032566260019957
+      monash_m3_quarterly: 0.34524024541577186
+      tourism_yearly: 0.1885041778837142
+      m4_hourly: 6.0225944124583055
+      m4_daily: 16.627413216139125
+      m4_weekly: 7.208783905319707
+      m4_monthly: 1.5256380773955973
+      m4_quarterly: 0.6507464671605873
+      m1_monthly: 0.5131901712796939
+      monash_m3_monthly: 0.7006807159285087
+      monash_m3_other: 0.48372098907932326
+      nn5_daily_with_missing: 5.184201566525991
+      nn5_weekly: 0.7406002237894274
+      tourism_monthly: 1.9366994558923314
+      tourism_quarterly: 0.6463300001434752
+      cif_2016_6: 0.29765075660870316
+      cif_2016_12: 0.7054572891935715
+      traffic_hourly: 122.55875703395323
+      traffic_weekly: 0.6771202046074764
+      australian_electricity_demand: 1627.3229877331478
+      rideshare_with_missing: 2.6308941283186322
+      saugeenday: 167.24163720258204
+      sunspot_with_missing: 521.1991708256755
+      temperature_rain_with_missing: 4.902068147939542
+      vehicle_trips_with_missing: 0.6970153271339371
+      weather: 55.38737709861909
+      car_parts_with_missing: 0.2750800831217873
+      fred_md: 5.050188192697429
+      pedestrian_counts: 334.58052493960093
+      hospital: 0.5078401534556073
+      covid_deaths: 1.2837070545683409
+      kdd_cup_2018_with_missing: 75.67978168320516
+      bitcoin_with_missing: 32.099729699673176
+      us_births: 51.31301550541032
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.LargeSTDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      largest_2017: 0.7876408715037606
+      largest_2018: 0.7876408715037606
+      largest_2019: 0.7876408715037606
+      largest_2020: 0.7876408715037606
+      largest_2021: 0.7876408715037606
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.LibCityDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      BEIJING_SUBWAY_30MIN: 0
+      HZMETRO: 0
+      LOOP_SEATTLE: 516.1486224979674
+      LOS_LOOP: 241.73191304486906
+      M_DENSE: 123.57443734086443
+      PEMS03: 184.85381585784103
+      PEMS04: 0
+      PEMS07: 188.8063477540696
+      PEMS08: 0
+      PEMS_BAY: 367.6762711018597
+      Q-TRAFFIC: 3.6926553793488854
+      SHMETRO: 0
+      SZ_TAXI: 20.99072634283177
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.OthersLOTSADatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      kdd2022: 248.84162255641573
+      godaddy: 0
+      favorita_sales: 1.4906652813558965
+      favorita_transactions: 11.025147035205995
+      restaurant: 2.5231760075944183
+      hierarchical_sales: 12.681897165460859
+      china_air_quality: 0
+      beijing_air_quality: 0
+      residential_load_power: 0
+      residential_pv_power: 0
+      cdc_fluview_ilinet: 0
+      cdc_fluview_who_nrevss: 0
+      project_tycho: 7.724506870438796
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.ProEnFoDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      gfc12_load: 278.000164004157
+      gfc14_load: 123.57443734086445
+      gfc17_load: 123.74371739201632
+      spain: 247.31815473288077
+      pdb: 123.57443734086445
+      elf: 153.70628644589715
+      bull: 123.74371739201631
+      cockatoo: 123.74371739201632
+      hog: 123.74371739201632
+      covid19_energy: 225.08604134826862
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.lotsa_v1.SubseasonalDatasetBuilder
+    datasets: ${cls_getattr:${._target_},dataset_list}
+    weight_map:
+      subseasonal: 0
+      subseasonal_precip: 79.8649174663589
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+  - _target_: uni2ts.data.builder.arrow.ArrowDatasetBuilder
+    dataset: kernelsynth-data
+    weight: 0.16671600506684348
+    sample_time_series:
+      _target_: uni2ts.data.dataset.SampleTimeSeriesType
+      _args_: ["proportional"]
+#  - _target_: uni2ts.data.builder.simple.SimpleDatasetBuilder
+#    dataset: deu38

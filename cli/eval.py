@@ -13,6 +13,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 import hydra
 import torch
 from gluonts.time_feature import get_seasonality
@@ -99,6 +101,11 @@ def main(cfg: DictConfig):
             past_feat_dynamic_real_dim=metadata.past_feat_dynamic_real_dim,
         )
         metrics = instantiate(cfg.metrics, _convert_="all")
+        print(
+            "-" * 5,
+            f"Evaluating {cfg.data.dataset_name} with model_path {cfg.model.module.pretrained_model_name_or_path}",
+            "-" * 5,
+        )
         try:
             predictor = model.create_predictor(batch_size, cfg.device)
             res = evaluate_model(
@@ -111,12 +118,23 @@ def main(cfg: DictConfig):
                 allow_nan_forecast=False,
                 seasonality=get_seasonality(metadata.freq),
             )
+            res.index = [cfg.data.dataset_name]
             print(res)
             output_dir = HydraConfig.get().runtime.output_dir
+            # print('output_dir:', output_dir)
             writer = SummaryWriter(log_dir=output_dir)
             for name, metric in res.to_dict("records")[0].items():
                 writer.add_scalar(f"{metadata.split}_metrics/{name}", metric)
             writer.close()
+
+            results_dir = os.path.join(cfg.results_dir, cfg.run_name)
+            if not os.path.exists(results_dir):
+                os.makedirs(results_dir)
+            save_path = os.path.join(results_dir, f"{cfg.data.dataset_name}.csv")
+            res.to_csv(save_path)
+            print(f"Results saved to {save_path}")
+            print("-" * 5, f"Evaluation on {cfg.data.dataset_name} completed", "-" * 5)
+
             break
         except torch.cuda.OutOfMemoryError:
             print(

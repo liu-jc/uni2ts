@@ -10,7 +10,7 @@ from omegaconf import OmegaConf
 if __name__ == "__main__":
     print("start")
     initialize(version_base=None, config_path="conf/eval")
-    dataset_names = ["ETTh1", "ETTh2", "ETTm1", "ETTm2", "electricity", "weather"]
+    dataset_names = ["ETTh1"]
     patch_sz = {
         "ETTh1": 64,
         "ETTh2": 64,

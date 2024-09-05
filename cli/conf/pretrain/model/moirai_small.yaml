@@ -27,4 +27,3 @@ beta1: 0.9
 beta2: 0.98
 num_training_steps: ${mul:${trainer.max_epochs},${train_dataloader.num_batches_per_epoch}}
 num_warmup_steps: 10_000
-log_loss_per_ds: False

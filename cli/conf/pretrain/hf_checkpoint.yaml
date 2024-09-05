@@ -8,16 +8,16 @@ defaults:
   - _self_
 run_name: ???
 seed: 0
-tf32: true
+tf32: false
 compile: false  # set to mode: default, reduce-overhead, max-autotune
-ckpt_path: null  # set to "last" to resume training
+ckpt_path: last
 trainer:
   _target_: lightning.Trainer
   accelerator: auto
   strategy: auto
   devices: auto
   num_nodes: 1
-  precision: 32
+  precision: bf16
   logger:
       _target_: lightning.pytorch.loggers.TensorBoardLogger
       save_dir: ${hydra:runtime.output_dir}
@@ -31,7 +31,7 @@ trainer:
       monitor: epoch
       mode: max
       save_top_k: 1
-      every_n_epochs: 10
+      every_n_epochs: 1
     - _target_: lightning.pytorch.callbacks.ModelCheckpoint
       dirpath: ${hydra:runtime.output_dir}/checkpoints
       monitor: epoch
@@ -58,7 +58,7 @@ train_dataloader:
   batch_size: 128
   batch_size_factor: 2.0
   cycle: true
-  num_batches_per_epoch: 100
+  num_batches_per_epoch: 20
   shuffle: true
   num_workers: 11
   collate_fn:

@@ -1,0 +1,7 @@
+_target_: uni2ts.model.moirai.MoiraiForecast
+module:
+  _target_: uni2ts.model.moirai.MoiraiModule.from_pretrained
+  pretrained_model_name_or_path: juncliu/moirai-1.1-R-small_lotsa_v1_all_data_univar-bs-256-1000-lr1e-3
+num_samples: 100
+patch_size: ???
+context_length: ???

@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 from functools import partial
 from typing import Callable, Optional
 
@@ -26,6 +27,8 @@ from torch.utils.data import Dataset, DistributedSampler
 
 from uni2ts.common import hydra_util  # noqa: hydra resolvers
 from uni2ts.data.loader import DataLoader
+
+os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
 
 class DataModule(L.LightningDataModule):
@@ -142,6 +145,7 @@ def main(cfg: DictConfig):
     trainer.fit(
         model,
         datamodule=DataModule(cfg, train_dataset, val_dataset),
+        ckpt_path=cfg.ckpt_path,
     )
 
 

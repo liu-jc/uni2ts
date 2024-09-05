@@ -1,0 +1,2 @@
+_target_: uni2ts.data.builder.arrow.ArrowDatasetBuilder
+dataset: tsmixup_10m

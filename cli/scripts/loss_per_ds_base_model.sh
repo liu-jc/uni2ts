@@ -3,7 +3,7 @@ min_mask_ratio=0.15
 max_epoch=1000
 batch_size=256
 accumulate_factor=1
-for max_epoch in 1000 5000
+for max_epoch in 10000
 do
   for lr in 1e-3
   do
